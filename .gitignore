@@ -1,0 +1,8 @@
+node_modules/
+dist/
+release/
+out/
+reference/
+*.kbbackup
+.DS_Store
+Thumbs.db

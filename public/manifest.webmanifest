@@ -1,0 +1,29 @@
+{
+  "name": "Katie Beckett Helper",
+  "short_name": "Katie Beckett",
+  "description": "A calm, private step-by-step helper for Georgia families applying for Katie Beckett Medicaid.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fdf8f1",
+  "theme_color": "#236464",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
