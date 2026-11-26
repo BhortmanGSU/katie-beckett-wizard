@@ -106,6 +106,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+}
+
+.brand > div {
+  min-width: 0;
+}
+
+.brand-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brand img {
@@ -219,6 +233,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   padding: 2rem 2.5rem 4rem;
   max-width: 960px;
   width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -313,6 +328,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  min-width: 0;
 }
 
 .field label {
@@ -332,6 +348,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   padding: 0.56rem 0.72rem;
   background: #fff;
   font-size: 0.96rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   transition: border-color 0.15s;
 }
 
