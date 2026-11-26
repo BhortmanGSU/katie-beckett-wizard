@@ -119,8 +119,8 @@ export function DocumentsStep({
           Packet readiness: {coveredCount} of {neededCount} needed items started
         </strong>
         You don’t need everything today! If you’re waiting on your pediatrician to sign DMA-6A, DMA-706, and DMA-704,
-        skip ahead to Step 6 to download your ready-to-sign Doctor’s Packet first, then come back here to upload the
-        signed scans.
+        go to Step 6 to sign your parts and Step 8 to download your ready-to-sign Doctor’s Packet first, then come back
+        here to upload the signed scans.
       </div>
 
       {slots.map(({ slot, needed, reason }) => {

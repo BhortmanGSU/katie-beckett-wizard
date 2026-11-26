@@ -614,7 +614,7 @@ export const dma6aMap: FormMap = {
       label: '24. Physician Address',
       page: 0,
       x: 378,
-      y: 115,
+      y: 112,
       size: 8,
       maxWidth: 205,
       section: 'doctor',
@@ -633,14 +633,31 @@ export const dma6aMap: FormMap = {
     },
     {
       kind: 'text',
-      label: '28. Physician Phone',
+      label: '28. Physician Phone (Area)',
       page: 0,
-      x: 496,
-      y: 71,
-      size: 8.5,
-      maxWidth: 92,
+      x: 503,
+      y: 81,
+      size: 7.5,
+      maxWidth: 13,
       section: 'doctor',
-      value: ({ profile }) => profile.physician.phone,
+      value: ({ profile }) => {
+        const d = profile.physician.phone.replace(/\D/g, '');
+        return d.length === 10 ? d.slice(0, 3) : '';
+      },
+    },
+    {
+      kind: 'text',
+      label: '28. Physician Phone (Number)',
+      page: 0,
+      x: 521,
+      y: 81,
+      size: 8.5,
+      maxWidth: 68,
+      section: 'doctor',
+      value: ({ profile }) => {
+        const d = profile.physician.phone.replace(/\D/g, '');
+        return d.length === 10 ? `${d.slice(3, 6)}-${d.slice(6)}` : profile.physician.phone;
+      },
     },
 
     // Section C — Page 2 checkboxes (doctor draft)

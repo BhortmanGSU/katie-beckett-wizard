@@ -191,6 +191,25 @@ export async function buildDayInTheLifePdf(profile: Profile, todayStr: string): 
   return doc.save();
 }
 
+async function convertImageToPng(bytes: Uint8Array, mime: string): Promise<Uint8Array | null> {
+  if (typeof document === 'undefined' || typeof createImageBitmap !== 'function') return null;
+  try {
+    const blob = new Blob([bytes as BlobPart], { type: mime });
+    const bmp = await createImageBitmap(blob);
+    const canvas = document.createElement('canvas');
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(bmp, 0, 0);
+    const pngBlob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/png'));
+    if (!pngBlob) return null;
+    return new Uint8Array(await pngBlob.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
 /** Merge several PDFs (and optionally images) into one clean PDF document. */
 export async function mergePdfsAndImages(
   items: { name: string; bytes: Uint8Array; mime: string }[],
@@ -201,8 +220,17 @@ export async function mergePdfsAndImages(
       const src = await PDFDocument.load(item.bytes, { ignoreEncryption: true });
       const pages = await merged.copyPages(src, src.getPageIndices());
       pages.forEach((p) => merged.addPage(p));
-    } else if (item.mime === 'image/png' || item.mime === 'image/jpeg') {
-      const img = item.mime === 'image/png' ? await merged.embedPng(item.bytes) : await merged.embedJpg(item.bytes);
+    } else if (item.mime.startsWith('image/')) {
+      let img;
+      if (item.mime === 'image/png') {
+        img = await merged.embedPng(item.bytes);
+      } else if (item.mime === 'image/jpeg' || item.mime === 'image/jpg') {
+        img = await merged.embedJpg(item.bytes);
+      } else {
+        const png = await convertImageToPng(item.bytes, item.mime);
+        if (png) img = await merged.embedPng(png);
+      }
+      if (!img) continue;
       const page = merged.addPage([612, 792]);
       const margin = 36;
       const scale = Math.min((612 - margin * 2) / img.width, (792 - margin * 2) / img.height, 1);

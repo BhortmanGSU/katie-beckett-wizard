@@ -133,10 +133,10 @@ export const form94Map: FormMap = {
     { kind: 'check', label: 'Katie Beckett', page: 0, x: 282, y: 529, size: 8.5, when: () => true },
 
     // Your Name (parent / applicant)
-    { kind: 'text', label: 'First Name', page: 0, x: 142, y: 429, size: 9, maxWidth: 92, value: ({ profile }) => profile.applicant.firstName },
-    { kind: 'text', label: 'M.I.', page: 0, x: 242, y: 429, size: 9, maxWidth: 40, value: ({ profile }) => profile.applicant.middleInitial },
-    { kind: 'text', label: 'Last Name', page: 0, x: 313, y: 429, size: 9, maxWidth: 116, value: ({ profile }) => profile.applicant.lastName },
-    { kind: 'text', label: 'Maiden Name', page: 0, x: 436, y: 429, size: 9, maxWidth: 142, value: ({ profile }) => profile.applicant.maidenName },
+    { kind: 'text', label: 'First Name', page: 0, x: 142, y: 432, size: 9, maxWidth: 92, value: ({ profile }) => profile.applicant.firstName },
+    { kind: 'text', label: 'M.I.', page: 0, x: 242, y: 432, size: 9, maxWidth: 40, value: ({ profile }) => profile.applicant.middleInitial },
+    { kind: 'text', label: 'Last Name', page: 0, x: 313, y: 432, size: 9, maxWidth: 116, value: ({ profile }) => profile.applicant.lastName },
+    { kind: 'text', label: 'Maiden Name', page: 0, x: 436, y: 432, size: 9, maxWidth: 142, value: ({ profile }) => profile.applicant.maidenName },
     { kind: 'text', label: "Today's Date", page: 0, x: 632, y: 432, size: 9, maxWidth: 110, value: ({ signDate }) => signDate },
 
     // Mailing address
@@ -151,19 +151,20 @@ export const form94Map: FormMap = {
       label: 'Residence Address',
       page: 0,
       x: 36,
-      y: 389,
+      y: 391,
       size: 8.5,
       maxWidth: 425,
       value: ({ profile }) => (profile.residenceDifferent ? formatAddress(profile.residenceAddress) : 'Same as mailing address'),
     },
-    { kind: 'text', label: 'Phone Number', page: 0, x: 474, y: 389, size: 8.5, maxWidth: 108, value: ({ profile }) => profile.applicant.phone },
-    { kind: 'text', label: 'Email Address', page: 0, x: 590, y: 389, size: 8.5, maxWidth: 168, value: ({ profile }) => profile.applicant.email },
+    { kind: 'text', label: 'Phone Number', page: 0, x: 474, y: 391, size: 8.5, maxWidth: 108, value: ({ profile }) => profile.applicant.phone },
+    { kind: 'text', label: 'Email Address', page: 0, x: 590, y: 391, size: 8.5, maxWidth: 168, value: ({ profile }) => profile.applicant.email },
 
     // Electronic communication, language, interpreter
     { kind: 'check', label: 'Electronic Comm Yes', page: 0, x: 168, y: 381, size: 7.5, when: ({ profile }) => profile.applicant.electronicCommunication === 'yes' },
     { kind: 'check', label: 'Electronic Comm No', page: 0, x: 207, y: 381, size: 7.5, when: ({ profile }) => profile.applicant.electronicCommunication === 'no' },
     { kind: 'text', label: 'Preferred Language', page: 0, x: 618, y: 378, size: 8.5, maxWidth: 135, value: ({ profile }) => profile.applicant.preferredLanguage },
-    { kind: 'text', label: 'Interpreter Y/N', page: 0, x: 713, y: 366, size: 8, maxWidth: 20, value: ({ profile }) => (profile.applicant.needsInterpreter === 'yes' ? 'Yes' : profile.applicant.needsInterpreter === 'no' ? 'No' : '') },
+    { kind: 'check', label: 'Interpreter Yes', page: 0, x: 719, y: 369, size: 7.5, when: ({ profile }) => profile.applicant.needsInterpreter === 'yes' },
+    { kind: 'check', label: 'Interpreter No', page: 0, x: 743, y: 369, size: 7.5, when: ({ profile }) => profile.applicant.needsInterpreter === 'no' },
 
     // Reasonable modification
     { kind: 'check', label: 'ADA Mod Yes', page: 0, x: 434, y: 345, size: 7.5, when: ({ profile }) => profile.applicant.needsReasonableModification === 'yes' },

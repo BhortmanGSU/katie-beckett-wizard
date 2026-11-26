@@ -5,6 +5,7 @@ import {
   type Diagnosis,
   type Hospitalization,
   type Medication,
+  type Procedure,
   type Profile,
   type YesNo,
 } from '../profile';
@@ -218,6 +219,56 @@ export function HealthStep({ profile, onChange, onBack, onNext }: Props) {
         >
           + Add medication
         </button>
+
+        <hr style={{ border: 0, borderTop: '1px solid var(--border)', margin: '1rem 0' }} />
+
+        <h3 style={{ fontSize: '1rem' }}>Daily medical treatments &amp; procedures (DMA-6A Item 15)</h3>
+        <p className="card-hint">Examples: G-tube feeding, pulse oximetry, nebulizer, suctioning, catheterization.</p>
+        {h.procedures.map((pr: Procedure) => (
+          <div key={pr.id} className="sub-row">
+            <div className="grid-2">
+              <div className="field">
+                <label>Treatment / procedure</label>
+                <input
+                  value={pr.type}
+                  placeholder="e.g. G-tube feeding"
+                  onChange={(e) =>
+                    setHealth({ procedures: h.procedures.map((x) => (x.id === pr.id ? { ...x, type: e.target.value } : x)) })
+                  }
+                />
+              </div>
+              <div className="field">
+                <label>How often</label>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <input
+                    style={{ flex: 1 }}
+                    value={pr.frequency}
+                    placeholder="e.g. 5x daily, Overnight"
+                    onChange={(e) =>
+                      setHealth({
+                        procedures: h.procedures.map((x) => (x.id === pr.id ? { ...x, frequency: e.target.value } : x)),
+                      })
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setHealth({ procedures: h.procedures.filter((x) => x.id !== pr.id) })}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn btn-outline btn-sm"
+          onClick={() => setHealth({ procedures: [...h.procedures, { id: uid(), type: '', frequency: '' }] })}
+        >
+          + Add treatment / procedure
+        </button>
       </div>
 
       {/* Therapies, School & Hospitalizations */}
@@ -266,6 +317,22 @@ export function HealthStep({ profile, onChange, onBack, onNext }: Props) {
               value={profile.child.skilledNursingHoursPerDay}
               placeholder="e.g. 8 or leave blank"
               onChange={(e) => setChild({ skilledNursingHoursPerDay: e.target.value })}
+            />
+          </div>
+          <div className="field">
+            <label>Rehab / therapy services summary (DMA-6A Item 16)</label>
+            <input
+              value={h.rehabServices}
+              placeholder="e.g. PT, OT, Speech therapy"
+              onChange={(e) => setHealth({ rehabServices: e.target.value })}
+            />
+          </div>
+          <div className="field" style={{ gridColumn: 'span 2' }}>
+            <label>Other home health services (DMA-6A Item 16 &amp; DMA-704)</label>
+            <input
+              value={h.otherHealthServices}
+              placeholder="e.g. Private duty nursing 8 hrs/day, feeding supplies"
+              onChange={(e) => setHealth({ otherHealthServices: e.target.value })}
             />
           </div>
         </div>
@@ -438,6 +505,14 @@ export function HealthStep({ profile, onChange, onBack, onNext }: Props) {
             </div>
           </div>
         ))}
+        <div className="field" style={{ marginTop: '0.75rem' }}>
+          <label>Behavior / additional remarks (DMA-6A Item 40 — required if “Behavioral challenges” is checked)</label>
+          <textarea
+            value={h.behaviorDescription}
+            onChange={(e) => setHealth({ behaviorDescription: e.target.value })}
+            placeholder="Briefly describe any safety risks, elopement, self-injury, or extra notes for DMA-6A Item 40."
+          />
+        </div>
       </div>
 
       <div className="wizard-footer">

@@ -82,11 +82,22 @@ export function extractSuggestions(text: string): SuggestedField[] {
 }
 
 function matchForm(text: string): FormRegistryEntry | undefined {
+  let best: FormRegistryEntry | undefined;
+  let bestScore = 0;
   for (const form of GEORGIA_RULES.forms) {
-    const hits = form.matchPatterns.filter((p) => new RegExp(p, 'i').test(text)).length;
-    if (hits >= 1) return form;
+    let score = 0;
+    form.matchPatterns.forEach((p, idx) => {
+      if (new RegExp(p, 'i').test(text)) {
+        // First pattern is the explicit form code/title, so weight it highest.
+        score += idx === 0 ? 3 : 1;
+      }
+    });
+    if (score > bestScore) {
+      bestScore = score;
+      best = form;
+    }
   }
-  return undefined;
+  return best;
 }
 
 function daysBetween(isoDate: string, now: Date): number {

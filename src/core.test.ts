@@ -1,7 +1,5 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import { checkDocumentFreshness } from './docs/freshness';
@@ -12,10 +10,27 @@ import { FORM_MAPS } from './forms/maps';
 import { sampleProfile } from './fixtures/sampleProfile';
 import { GEORGIA_RULES } from './rules/ga';
 import { decryptBackup, encryptBackup } from './storage/crypto';
+import { todayIso } from './utils/download';
 
 describe('Document freshness & form version checks', () => {
   const dma6aSlot = GEORGIA_RULES.documentSlots.find((s) => s.id === 'dma-6a');
   const evalSlot = GEORGIA_RULES.documentSlots.find((s) => s.id === 'psych-eval');
+
+  it('classifies DMA-6A correctly even though it mentions "Date of Medicaid Application"', () => {
+    const dma6aText =
+      'DMA-6A (1/2018) PEDIATRIC DMA 6(A) PHYSICIAN RECOMMENDATION FOR PEDIATRIC CARE 9. Date of Medicaid Application 11/10/2026';
+    const report = checkDocumentFreshness(dma6aText, dma6aSlot, undefined, new Date('2026-11-25T12:00:00Z'));
+    expect(report.detectedFormId).toBe('dma-6a');
+    expect(report.detectedFormCode).toBe('DMA-6A');
+    expect(report.status).toBe('current');
+  });
+
+  it('classifies Form 94 correctly', () => {
+    const f94Text = 'Form 94 (Revised 10/2022) MEDICAID APPLICATION EXPRESS LANE ELIGIBILITY';
+    const report = checkDocumentFreshness(f94Text, undefined);
+    expect(report.detectedFormId).toBe('form-94');
+    expect(report.status).toBe('current');
+  });
 
   it('flags an expired DMA-6A older than 90 days', () => {
     const now = new Date('2026-11-25T12:00:00Z');
@@ -56,8 +71,13 @@ describe('Document freshness & form version checks', () => {
 });
 
 describe('Deadlines & ICS calendar export', () => {
+  it('uses local calendar dates (no UTC rollover bug)', () => {
+    const lateEvening = new Date(2026, 10, 25, 22, 30, 0); // Nov 25 2026 10:30 PM local
+    expect(todayIso(lateEvening)).toBe('2026-11-25');
+  });
+
   it('computes 90-day DMA-6A deadline, 30-day RFI, and 1-yr / 2-yr renewals', () => {
-    const now = new Date('2026-11-25T12:00:00Z');
+    const now = new Date(2026, 10, 25, 12, 0, 0);
     const items = computeDeadlines(
       {
         targetSubmitDate: '2026-12-10',
@@ -106,60 +126,6 @@ describe('Official Georgia PDF form filling', () => {
       });
       const out = await PDFDocument.load(filled);
       expect(out.getPageCount()).toBe(orig.getPageCount());
-    }
-  });
-});
-
-describe('Built-in local web server & phone sync API', () => {
-  it('enforces the 4-digit Family PIN and syncs state + documents', async () => {
-    const req = createRequire(import.meta.url);
-    const { startLocalServer } = req('../electron/server.cjs');
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'kb-server-test-'));
-    const srv = await startLocalServer({
-      distDir: path.resolve('dist'),
-      dataDir: tmp,
-      preferredPort: 0,
-    });
-    const base = `http://127.0.0.1:${srv.port}`;
-    try {
-      // Without PIN -> 401
-      const noPin = await fetch(`${base}/api/state`);
-      expect(noPin.status).toBe(401);
-
-      // With PIN -> save & reload state
-      const headers = { 'X-KB-Pin': srv.pin, 'Content-Type': 'application/json' };
-      const putRes = await fetch(`${base}/api/state`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({ profile: { child: { firstName: 'Lily' } } }),
-      });
-      expect(putRes.ok).toBe(true);
-
-      const getRes = await fetch(`${base}/api/state`, { headers });
-      const data = await getRes.json();
-      expect(data.state.profile.child.firstName).toBe('Lily');
-
-      // Upload & list document
-      const postDoc = await fetch(`${base}/api/docs`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          id: 'doc1',
-          slotId: 'child-id',
-          fileName: 'birth.png',
-          mimeType: 'image/png',
-          bytesB64: Buffer.from('hello').toString('base64'),
-        }),
-      });
-      expect(postDoc.ok).toBe(true);
-
-      const listRes = await fetch(`${base}/api/docs`, { headers });
-      const listed = await listRes.json();
-      expect(listed.docs).toHaveLength(1);
-      expect(listed.docs[0].fileName).toBe('birth.png');
-    } finally {
-      srv.close();
-      fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
 });

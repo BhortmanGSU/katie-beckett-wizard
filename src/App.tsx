@@ -12,12 +12,9 @@ import {
   type DeadlineDates,
   type StoredDocument,
 } from './storage/db';
-import { detectServer, subscribeLiveSync } from './storage/sync';
 import type { SuggestedField } from './docs/freshness';
 import { BackupModal } from './components/BackupModal';
-import { PhoneSyncModal } from './components/PhoneSyncModal';
 import { InstallAppBanner } from './components/InstallAppBanner';
-import { PinGate } from './components/PinGate';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { FamilyStep } from './steps/FamilyStep';
 import { HealthStep } from './steps/HealthStep';
@@ -42,12 +39,13 @@ export function App() {
   const [state, setState] = useState<AppState>(defaultAppState);
   const [docs, setDocs] = useState<StoredDocument[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [needsPin, setNeedsPin] = useState(false);
-  const [liveSyncOn, setLiveSyncOn] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
-  const [showPhone, setShowPhone] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [savedNotice, setSavedNotice] = useState('Saved on this device');
-  const [installEvent, setInstallEvent] = useState<{ prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null>(null);
+  const [installEvent, setInstallEvent] = useState<{
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: string }>;
+  } | null>(null);
   const skipNextSave = useRef(false);
 
   useEffect(() => {
@@ -59,69 +57,33 @@ export function App() {
     return () => window.removeEventListener('beforeinstallprompt', onPrompt);
   }, []);
 
-  const bootstrap = async () => {
-    const status = await detectServer();
-    if (status.mode === 'local-server' && !status.unlocked) {
-      setNeedsPin(true);
-      setLoaded(true);
-      return;
-    }
-    setNeedsPin(false);
-    setLiveSyncOn(status.mode === 'local-server');
-    const [s, d] = await Promise.all([loadAppState(), listDocuments()]);
-    skipNextSave.current = true;
-    setState(s);
-    setDocs(d);
-    setLoaded(true);
-  };
-
   useEffect(() => {
-    bootstrap();
-  }, []);
-
-  // Real-time sync between desktop app and phone browser over home Wi-Fi / VPN
-  useEffect(() => {
-    if (!liveSyncOn || needsPin) return;
-    return subscribeLiveSync(async (kind) => {
-      if (kind === 'state' || kind === 'clear') {
-        const fresh = await loadAppState();
+    Promise.all([loadAppState(), listDocuments()])
+      .then(([s, d]) => {
         skipNextSave.current = true;
-        setState(fresh);
-        setSavedNotice('Synced from phone ✓');
-      }
-      if (kind === 'docs' || kind === 'clear') {
-        const freshDocs = await listDocuments();
-        setDocs(freshDocs);
-        setSavedNotice('Documents synced ✓');
-      }
-    });
-  }, [liveSyncOn, needsPin]);
+        setState(s);
+        setDocs(d);
+      })
+      .finally(() => setLoaded(true));
+  }, []);
 
   // Auto-save whenever state changes after initial load
   useEffect(() => {
-    if (!loaded || needsPin) return;
+    if (!loaded) return;
     if (skipNextSave.current) {
       skipNextSave.current = false;
       return;
     }
     setSavedNotice('Saving...');
     const t = setTimeout(() => {
-      saveAppState(state).then(() => setSavedNotice(liveSyncOn ? 'Saved & synced ✓' : 'Saved automatically ✓'));
+      saveAppState(state).then(() => setSavedNotice('Saved automatically ✓'));
     }, 250);
     return () => clearTimeout(t);
-  }, [state, loaded, needsPin, liveSyncOn]);
-
-  if (needsPin) {
-    return (
-      <>
-        <PinGate onUnlocked={() => bootstrap()} />
-        <InstallAppBanner />
-      </>
-    );
-  }
+  }, [state, loaded]);
 
   const setStep = (idx: number) => {
     setState((s) => ({ ...s, currentStep: Math.max(0, Math.min(STEPS.length - 1, idx)) }));
+    setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -181,6 +143,7 @@ export function App() {
       profile: sampleProfile(),
       currentStep: 1,
     }));
+    setMobileMenuOpen(false);
   };
 
   const stepDone = (i: number): boolean => {
@@ -198,62 +161,76 @@ export function App() {
 
   return (
     <div className="shell">
-      <aside className="sidebar" aria-label="Wizard steps">
-        <div className="brand">
-          <img src="./favicon.svg" alt="" />
-          <div>
-            <div className="brand-title">Katie Beckett Helper</div>
-            <div className="brand-sub">Georgia TEFRA • {childLabel || 'New packet'}</div>
+      <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`} aria-label="Wizard steps">
+        <div className="sidebar-top">
+          <div className="brand">
+            <img src="./favicon.svg" alt="" />
+            <div>
+              <div className="brand-title">Katie Beckett Helper</div>
+              <div className="brand-sub">Georgia TEFRA • {childLabel || 'New packet'}</div>
+            </div>
           </div>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm mobile-menu-btn"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((v) => !v)}
+          >
+            Step {state.currentStep + 1}/8 {mobileMenuOpen ? '▴' : '▾'}
+          </button>
         </div>
 
-        <nav>
-          <ol className="step-nav">
-            {STEPS.map((label, idx) => {
-              const active = state.currentStep === idx;
-              const done = !active && stepDone(idx);
-              return (
-                <li key={label}>
-                  <button
-                    type="button"
-                    className={`step-btn ${active ? 'active' : ''} ${done ? 'done' : ''}`}
-                    aria-current={active ? 'step' : undefined}
-                    onClick={() => setStep(idx)}
-                  >
-                    <span className="step-num">{done ? '✓' : idx + 1}</span>
-                    <span className="step-label">{label}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
+        <div className="sidebar-body">
+          <nav>
+            <ol className="step-nav">
+              {STEPS.map((label, idx) => {
+                const active = state.currentStep === idx;
+                const done = !active && stepDone(idx);
+                return (
+                  <li key={label}>
+                    <button
+                      type="button"
+                      className={`step-btn ${active ? 'active' : ''} ${done ? 'done' : ''}`}
+                      aria-current={active ? 'step' : undefined}
+                      onClick={() => setStep(idx)}
+                    >
+                      <span className="step-num">{done ? '✓' : idx + 1}</span>
+                      <span className="step-label">{label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
-        <div className="sidebar-footer">
-          <div className="privacy-pill">🔒 Private &amp; local • {savedNotice}</div>
-          {installEvent && (
+          <div className="sidebar-footer">
+            <div className="privacy-pill">🔒 Private &amp; local • {savedNotice}</div>
+            {installEvent && (
+              <button
+                type="button"
+                className="btn btn-warm btn-sm"
+                onClick={async () => {
+                  await installEvent.prompt();
+                  const res = await installEvent.userChoice;
+                  if (res.outcome === 'accepted') setInstallEvent(null);
+                }}
+              >
+                ⬇ Install App on This Device
+              </button>
+            )}
             <button
               type="button"
-              className="btn btn-warm btn-sm"
-              onClick={async () => {
-                await installEvent.prompt();
-                const res = await installEvent.userChoice;
-                if (res.outcome === 'accepted') setInstallEvent(null);
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                setShowBackup(true);
+                setMobileMenuOpen(false);
               }}
             >
-              ⬇ Install App on This Device
+              ☁ Sync &amp; Backup (Phone ↔ PC)
             </button>
-          )}
-          {liveSyncOn && (
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowPhone(true)}>
-              📱 Local Wi-Fi Sync (QR)
-            </button>
-          )}
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowBackup(true)}>
-            ☁ Sync &amp; Backup (Phone ↔ PC)
-          </button>
-          <div style={{ fontSize: '0.76rem' }}>
-            Take a break whenever you need — your work is safe right here.
+            <div style={{ fontSize: '0.76rem' }}>
+              Take a break whenever you need — your work is safe right here.
+            </div>
           </div>
         </div>
       </aside>
@@ -348,7 +325,6 @@ export function App() {
         )}
       </main>
 
-      {showPhone && <PhoneSyncModal onClose={() => setShowPhone(false)} />}
       {showBackup && (
         <BackupModal
           state={state}

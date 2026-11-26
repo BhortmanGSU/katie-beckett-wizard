@@ -91,7 +91,7 @@ export const GEORGIA_RULES: StateRulePack = {
       title: 'Georgia Medicaid Application (Form 94)',
       plainTitle: 'Main Medicaid Application',
       currentRevision: 'Revised 10/2022',
-      matchPatterns: ['form\\s*94', 'medicaid\\s+application', 'express\\s+lane\\s+eligibility'],
+      matchPatterns: ['form\\s*94\\b', 'express\\s+lane\\s+eligibility', 'voter\\s+registration\\s+information'],
       currentRevisionPatterns: ['revised\\s*10/2022', '10/2022'],
       outdatedPatterns: ['revised\\s*(?:0?[1-9]|1[0-2])/20(?:1\\d|20|21)', 'form\\s*94a'],
       signatureValidityDays: null,

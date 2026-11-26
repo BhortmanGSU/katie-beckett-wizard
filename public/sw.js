@@ -3,7 +3,7 @@
 // families can work 100% offline at the doctor's office or hospital.
 // Never caches /api/* calls (those stay live when paired with the desktop app).
 
-const CACHE_NAME = 'kb-helper-v1';
+const CACHE_NAME = 'kb-helper-v2';
 
 const PRECACHE_URLS = [
   './',

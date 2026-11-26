@@ -2,7 +2,6 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { emptyProfile, type Profile } from '../profile';
 import type { FreshnessReport } from '../docs/freshness';
 import { encryptBackup, decryptBackup, toBase64, fromBase64 } from './crypto';
-import { apiFetch, isLocalServerActive } from './sync';
 
 export interface StoredDocument {
   id: string;
@@ -93,6 +92,15 @@ function mergeWithDefaults(saved: Partial<AppState> | null | undefined): AppStat
       ...saved.profile,
       child: { ...base.profile.child, ...saved.profile?.child },
       applicant: { ...base.profile.applicant, ...saved.profile?.applicant },
+      caregiver2: { ...base.profile.caregiver2, ...saved.profile?.caregiver2 },
+      mailingAddress: { ...base.profile.mailingAddress, ...saved.profile?.mailingAddress },
+      residenceAddress: { ...base.profile.residenceAddress, ...saved.profile?.residenceAddress },
+      absentParent: { ...base.profile.absentParent, ...saved.profile?.absentParent },
+      authorizedRep: {
+        ...base.profile.authorizedRep,
+        ...saved.profile?.authorizedRep,
+        address: { ...base.profile.authorizedRep.address, ...saved.profile?.authorizedRep?.address },
+      },
       health: {
         ...base.profile.health,
         ...saved.profile?.health,
@@ -109,75 +117,32 @@ function mergeWithDefaults(saved: Partial<AppState> | null | undefined): AppStat
 }
 
 export async function loadAppState(): Promise<AppState> {
-  if (isLocalServerActive()) {
-    const res = await apiFetch('api/state');
-    if (res.ok) {
-      const data = await res.json();
-      return mergeWithDefaults(data.state);
-    }
-  }
   const db = await getDb();
   const saved = await db.get('state', 'main');
   return mergeWithDefaults(saved);
 }
 
 export async function saveAppState(state: AppState): Promise<void> {
-  const payload = { ...state, updatedAt: new Date().toISOString() };
-  if (isLocalServerActive()) {
-    await apiFetch('api/state', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return;
-  }
   const db = await getDb();
-  await db.put('state', payload, 'main');
+  await db.put('state', { ...state, updatedAt: new Date().toISOString() }, 'main');
 }
 
 export async function listDocuments(): Promise<StoredDocument[]> {
-  if (isLocalServerActive()) {
-    const res = await apiFetch('api/docs');
-    if (res.ok) {
-      const data = await res.json();
-      return (data.docs ?? []).map((d: Omit<StoredDocument, 'bytes'> & { bytesB64: string }) => {
-        const { bytesB64, ...meta } = d;
-        return { ...meta, bytes: bytesB64 ? fromBase64(bytesB64) : new Uint8Array() };
-      });
-    }
-  }
   const db = await getDb();
   return db.getAll('docs');
 }
 
 export async function saveDocument(doc: StoredDocument): Promise<void> {
-  if (isLocalServerActive()) {
-    const { bytes, ...meta } = doc;
-    await apiFetch('api/docs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...meta, bytesB64: toBase64(bytes) }),
-    });
-    return;
-  }
   const db = await getDb();
   await db.put('docs', doc);
 }
 
 export async function deleteDocument(id: string): Promise<void> {
-  if (isLocalServerActive()) {
-    await apiFetch(`api/docs/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    return;
-  }
   const db = await getDb();
   await db.delete('docs', id);
 }
 
 export async function clearAllData(): Promise<void> {
-  if (isLocalServerActive()) {
-    await apiFetch('api/clear', { method: 'POST' });
-    return;
-  }
   const db = await getDb();
   await db.clear('state');
   await db.clear('docs');
@@ -195,7 +160,8 @@ export async function importEncryptedBackup(raw: string, passphrase: string): Pr
   );
   const docs: StoredDocument[] = (data.docs ?? []).map((d) => ({ ...d, bytes: fromBase64(d.bytes) }));
   await clearAllData();
-  await saveAppState(data.state);
+  const merged = mergeWithDefaults(data.state);
+  await saveAppState(merged);
   for (const d of docs) await saveDocument(d);
-  return { state: data.state, docs };
+  return { state: merged, docs };
 }

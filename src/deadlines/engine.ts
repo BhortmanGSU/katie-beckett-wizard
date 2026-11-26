@@ -13,23 +13,27 @@ export interface DeadlineItem {
   action: string;
 }
 
+function localIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function addDays(iso: string, days: number): string {
   const d = new Date(iso + 'T12:00:00');
   if (isNaN(d.getTime())) return '';
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return localIso(d);
 }
 
 export function addYears(iso: string, years: number): string {
   const d = new Date(iso + 'T12:00:00');
   if (isNaN(d.getTime())) return '';
   d.setFullYear(d.getFullYear() + years);
-  return d.toISOString().slice(0, 10);
+  return localIso(d);
 }
 
 function diffDays(targetIso: string, now: Date): number {
   const t = new Date(targetIso + 'T12:00:00');
-  const n = new Date(now.toISOString().slice(0, 10) + 'T12:00:00');
+  const n = new Date(localIso(now) + 'T12:00:00');
   return Math.round((t.getTime() - n.getTime()) / 86_400_000);
 }
 

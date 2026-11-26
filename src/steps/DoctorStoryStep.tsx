@@ -100,12 +100,20 @@ export function DoctorStoryStep({ profile, onChange, onBack, onNext }: Props) {
 
       {/* Optional Cost-Effectiveness Draft */}
       <div className="card">
-        <h2>Estimated monthly home-care costs (DMA-704 draft — optional)</h2>
+        <h2>Estimated monthly home-care costs &amp; prognosis (DMA-704 draft — optional)</h2>
         <p className="card-hint">
           Your doctor completes DMA-704, so you can leave these blank if you’re unsure. For reference, Georgia’s manual
           lists institutional comparison ceilings around <strong>$6,344/mo</strong> (Nursing Facility) and{' '}
           <strong>$14,846/mo</strong> (ICF/ID).
         </p>
+        <div className="field" style={{ marginBottom: '0.9rem' }}>
+          <label>Prognosis (optional draft for DMA-704)</label>
+          <input
+            value={profile.health.prognosis}
+            onChange={(e) => onChange({ ...profile, health: { ...profile.health, prognosis: e.target.value } })}
+            placeholder="e.g. Lifelong condition; ongoing skilled home care expected"
+          />
+        </div>
         <div className="grid-3">
           <div className="field">
             <label>Physician services ($/mo)</label>
@@ -131,6 +139,16 @@ export function DoctorStoryStep({ profile, onChange, onBack, onNext }: Props) {
             <label>Other supplies ($/mo)</label>
             <input value={profile.costs.other} onChange={(e) => setCosts({ other: e.target.value })} />
           </div>
+          {profile.costs.other && (
+            <div className="field">
+              <label>What is “Other”?</label>
+              <input
+                value={profile.costs.otherLabel}
+                placeholder="e.g. Feeding supplies"
+                onChange={(e) => setCosts({ otherLabel: e.target.value })}
+              />
+            </div>
+          )}
         </div>
         {total > 0 && (
           <div style={{ marginTop: '0.8rem', fontWeight: 700, color: 'var(--teal)' }}>
