@@ -115,7 +115,7 @@ export function SignaturePad({ value, defaultName, onChange }: Props) {
             onPointerUp={end}
             onPointerCancel={end}
           />
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', marginTop: '0.55rem' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.55rem' }}>
             <button type="button" className="btn btn-outline btn-sm" onClick={clear}>
               Clear &amp; try again
             </button>

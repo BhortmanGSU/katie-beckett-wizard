@@ -97,7 +97,7 @@ export function HealthStep({ profile, onChange, onBack, onNext }: Props) {
         {h.diagnoses.map((d: Diagnosis, i) => (
           <div key={d.id} className="sub-row">
             <div className="grid-3" style={{ alignItems: 'end' }}>
-              <div className="field" style={{ gridColumn: 'span 2' }}>
+              <div className="field span-2">
                 <label>Diagnosis #{i + 1}</label>
                 <input
                   value={d.name}
@@ -327,7 +327,7 @@ export function HealthStep({ profile, onChange, onBack, onNext }: Props) {
               onChange={(e) => setHealth({ rehabServices: e.target.value })}
             />
           </div>
-          <div className="field" style={{ gridColumn: 'span 2' }}>
+          <div className="field span-2">
             <label>Other home health services (DMA-6A Item 16 &amp; DMA-704)</label>
             <input
               value={h.otherHealthServices}
